@@ -26,14 +26,6 @@ variable "create_trigger" {
   default     = false
 }
 
-resource "random_string" "unique_id" {
-  length  = 8
-  upper   = false
-  lower   = true
-  numeric = true
-  special = false
-}
-
 variable "tags" {
   description = "List of tags for cloud function yc-function-example."
   type        = list(string)
