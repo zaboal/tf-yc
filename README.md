@@ -30,7 +30,7 @@ resource "yandex_function" "yc_function" {
   entrypoint         = var.entrypoint
   memory             = var.memory
   execution_timeout  = var.execution_timeout
-  service_account_id = local.create_sa ? var.existing_service_account_id : yandex_iam_service_account.default_cloud_function_sa[0].id
+  service_account_id = local.create_service_account ? var.existing_service_account_id : yandex_iam_service_account.default_cloud_function_sa[0].id
   tags               = var.tags
   environment        = var.environment
 
@@ -67,13 +67,13 @@ resource "yandex_function" "yc_function" {
     for_each = var.use_async_invocation != true ? [] : tolist(1)
     content {
       retries_count      = var.retries_count
-      service_account_id = local.create_sa ? var.existing_service_account_id : yandex_iam_service_account.default_cloud_function_sa[0].id
+      service_account_id = local.create_service_account ? var.existing_service_account_id : yandex_iam_service_account.default_cloud_function_sa[0].id
       ymq_failure_target {
-        service_account_id = local.create_sa ? var.existing_service_account_id : yandex_iam_service_account.default_cloud_function_sa[0].id
+        service_account_id = local.create_service_account ? var.existing_service_account_id : yandex_iam_service_account.default_cloud_function_sa[0].id
         arn                = var.ymq_failure_target
       }
       ymq_success_target {
-        service_account_id = local.create_sa ? var.existing_service_account_id : yandex_iam_service_account.default_cloud_function_sa[0].id
+        service_account_id = local.create_service_account ? var.existing_service_account_id : yandex_iam_service_account.default_cloud_function_sa[0].id
         arn                = var.ymq_success_target
       }
     }
@@ -162,7 +162,7 @@ resource "yandex_function_trigger" "yc_trigger" {
     for_each = var.choosing_trigger_type == "message_queue" ? [yandex_function.yc_function.id] : []
     content {
       queue_id           = var.message_queue.queue_id
-      service_account_id = local.create_sa ? var.existing_service_account_id : yandex_iam_service_account.default_cloud_function_sa[0].id
+      service_account_id = local.create_service_account ? var.existing_service_account_id : yandex_iam_service_account.default_cloud_function_sa[0].id
       batch_cutoff       = var.message_queue.batch_cutoff
       batch_size         = var.message_queue.batch_size
       visibility_timeout = var.message_queue.visibility_timeout
@@ -171,7 +171,7 @@ resource "yandex_function_trigger" "yc_trigger" {
 
   function {
     id                 = yandex_function.yc_function.id
-    service_account_id = local.create_sa ? var.existing_service_account_id : yandex_iam_service_account.default_cloud_function_sa[0].id
+    service_account_id = local.create_service_account ? var.existing_service_account_id : yandex_iam_service_account.default_cloud_function_sa[0].id
   }
 
   depends_on = [

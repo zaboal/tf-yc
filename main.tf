@@ -1,12 +1,63 @@
+# Create a client with the provided IAM token.
 data "yandex_client_config" "client" {}
 
 locals {
-  folder_id = var.folder_id == null ? data.yandex_client_config.client.folder_id : var.folder_id
-  iam_defaults = {
-    service_account_name = "function-service-account-${random_string.unique_id.result}"
+  # If not provided, infer folder ID from token access.
+  folder_id               = var.folder_id == null ? data.yandex_client_config.client.folder_id : var.folder_id
+
+  # If it's true that an existing resource should be used and its ID is provided, don't create a new resource.
+  create_log_group        = var.use_existing_log_group && var.existing_log_group_id != null ? true : false
+  create_service_account  = var.use_existing_service_account && var.existing_service_account_id != null ? true : false
+
+  # Default service accout name for Terraform.
+  iam_defaults            = {
+    service_account_name  = "terraform-function-${random_string.unique_id.result}"
   }
-  create_sa        = var.use_existing_sa && var.existing_service_account_id != null ? true : false
-  create_log_group = var.use_existing_log_group && var.existing_log_group_id != null ? true : false
+}
+
+# ------------------------------- New Log Group --------------------------------
+
+resource "yandex_logging_group" "default_log_group" {
+  description = "Cloud logging group for cloud function yc-function-example."
+  count       = local.create_log_group ? 0 : 1
+  folder_id   = local.folder_id
+  name        = "yc-logging-group-${random_string.unique_id.result}"
+}
+
+# --------------------- New Service Account for Terraform ----------------------
+
+resource "yandex_iam_service_account" "default_cloud_function_sa" {
+  description = "IAM service account for cloud function yc-function-example."
+  count       = local.create_service_account ? 0 : 1
+  folder_id   = local.folder_id
+  name        = try("${var.existing_service_account_name}-${random_string.unique_id.result}", local.iam_defaults.service_account_name)
+}
+
+resource "yandex_resourcemanager_folder_iam_binding" "invoker" {
+  count     = local.create_service_account ? 0 : 1
+  folder_id = local.folder_id
+  role      = "functions.functionInvoker"
+  members = [
+    "serviceAccount:${yandex_iam_service_account.default_cloud_function_sa[0].id}",
+  ]
+}
+
+resource "yandex_resourcemanager_folder_iam_binding" "editor" {
+  count     = local.create_service_account ? 0 : 1
+  folder_id = local.folder_id
+  role      = "editor"
+  members = [
+    "serviceAccount:${yandex_iam_service_account.default_cloud_function_sa[0].id}",
+  ]
+}
+
+resource "yandex_resourcemanager_folder_iam_binding" "lockbox_payload_viewer" {
+  count     = local.create_service_account ? 0 : 1
+  folder_id = local.folder_id
+  role      = "lockbox.payloadViewer"
+  members = [
+    "serviceAccount:${yandex_iam_service_account.default_cloud_function_sa[0].id}",
+  ]
 }
 
 resource "time_sleep" "wait_for_iam" {
@@ -17,6 +68,8 @@ resource "time_sleep" "wait_for_iam" {
     yandex_resourcemanager_folder_iam_binding.lockbox_payload_viewer
   ]
 }
+
+# ---------------------------------- Lockbox -----------------------------------
 
 resource "yandex_lockbox_secret" "yc_secret" {
   description = "Lockbox secret for cloud function yc-function-example from tf-module terraform-yc-function."
@@ -32,46 +85,7 @@ resource "yandex_lockbox_secret_version" "yc_version" {
   }
 }
 
-resource "yandex_logging_group" "default_log_group" {
-  description = "Cloud logging group for cloud function yc-function-example."
-  count       = local.create_log_group ? 0 : 1
-  folder_id   = local.folder_id
-  name        = "yc-logging-group-${random_string.unique_id.result}"
-}
-
-resource "yandex_iam_service_account" "default_cloud_function_sa" {
-  description = "IAM service account for cloud function yc-function-example."
-  count       = local.create_sa ? 0 : 1
-  folder_id   = local.folder_id
-  name        = try("${var.existing_service_account_name}-${random_string.unique_id.result}", local.iam_defaults.service_account_name)
-}
-
-resource "yandex_resourcemanager_folder_iam_binding" "invoker" {
-  count     = local.create_sa ? 0 : 1
-  folder_id = local.folder_id
-  role      = "functions.functionInvoker"
-  members = [
-    "serviceAccount:${yandex_iam_service_account.default_cloud_function_sa[0].id}",
-  ]
-}
-
-resource "yandex_resourcemanager_folder_iam_binding" "editor" {
-  count     = local.create_sa ? 0 : 1
-  folder_id = local.folder_id
-  role      = "editor"
-  members = [
-    "serviceAccount:${yandex_iam_service_account.default_cloud_function_sa[0].id}",
-  ]
-}
-
-resource "yandex_resourcemanager_folder_iam_binding" "lockbox_payload_viewer" {
-  count     = local.create_sa ? 0 : 1
-  folder_id = local.folder_id
-  role      = "lockbox.payloadViewer"
-  members = [
-    "serviceAccount:${yandex_iam_service_account.default_cloud_function_sa[0].id}",
-  ]
-}
+# --------------------------------- Function -----------------------------------
 
 resource "yandex_function_iam_binding" "function_iam" {
   count       = var.public_access ? 1 : 0
@@ -90,7 +104,7 @@ resource "yandex_function" "yc_function" {
   entrypoint         = var.entrypoint
   memory             = var.memory
   execution_timeout  = var.execution_timeout
-  service_account_id = local.create_sa ? var.existing_service_account_id : yandex_iam_service_account.default_cloud_function_sa[0].id
+  service_account_id = local.create_service_account ? var.existing_service_account_id : yandex_iam_service_account.default_cloud_function_sa[0].id
   tags               = var.tags
   environment        = var.environment
 
@@ -127,13 +141,13 @@ resource "yandex_function" "yc_function" {
     for_each = var.use_async_invocation != true ? [] : tolist(1)
     content {
       retries_count      = var.retries_count
-      service_account_id = local.create_sa ? var.existing_service_account_id : yandex_iam_service_account.default_cloud_function_sa[0].id
+      service_account_id = local.create_service_account ? var.existing_service_account_id : yandex_iam_service_account.default_cloud_function_sa[0].id
       ymq_failure_target {
-        service_account_id = local.create_sa ? var.existing_service_account_id : yandex_iam_service_account.default_cloud_function_sa[0].id
+        service_account_id = local.create_service_account ? var.existing_service_account_id : yandex_iam_service_account.default_cloud_function_sa[0].id
         arn                = var.ymq_failure_target
       }
       ymq_success_target {
-        service_account_id = local.create_sa ? var.existing_service_account_id : yandex_iam_service_account.default_cloud_function_sa[0].id
+        service_account_id = local.create_service_account ? var.existing_service_account_id : yandex_iam_service_account.default_cloud_function_sa[0].id
         arn                = var.ymq_success_target
       }
     }
@@ -186,7 +200,7 @@ resource "yandex_function_trigger" "yc_trigger" {
     for_each = var.choosing_trigger_type == "message_queue" ? [yandex_function.yc_function.id] : []
     content {
       queue_id           = var.message_queue.queue_id
-      service_account_id = local.create_sa ? var.existing_service_account_id : yandex_iam_service_account.default_cloud_function_sa[0].id
+      service_account_id = local.create_service_account ? var.existing_service_account_id : yandex_iam_service_account.default_cloud_function_sa[0].id
       batch_cutoff       = var.message_queue.batch_cutoff
       batch_size         = var.message_queue.batch_size
       visibility_timeout = var.message_queue.visibility_timeout
@@ -195,7 +209,7 @@ resource "yandex_function_trigger" "yc_trigger" {
 
   function {
     id                 = yandex_function.yc_function.id
-    service_account_id = local.create_sa ? var.existing_service_account_id : yandex_iam_service_account.default_cloud_function_sa[0].id
+    service_account_id = local.create_service_account ? var.existing_service_account_id : yandex_iam_service_account.default_cloud_function_sa[0].id
   }
 
   depends_on = [
