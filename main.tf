@@ -6,8 +6,8 @@ locals {
   folder_id               = var.folder_id == null ? data.yandex_client_config.client.folder_id : var.folder_id
 
   # If it's true that an existing resource should be used and its ID is provided, don't create a new resource.
-  create_log_group        = var.use_existing_log_group && var.existing_log_group_id != null ? true : false
-  create_service_account  = var.use_existing_service_account && var.existing_service_account_id != null ? true : false
+  create_logging_group    = var.create_logging_group && var.existing_log_group_id != null ? true : false
+  create_service_account  = var.create_service_account && var.existing_service_account_id != null ? true : false
 
   # Default service accout name for Terraform.
   iam_defaults            = {
@@ -21,7 +21,7 @@ locals {
 
 resource "yandex_logging_group" "default_log_group" {
   description = "Cloud logging group for cloud function yc-function-example."
-  count       = local.create_log_group ? 0 : 1
+  count       = local.create_logging_group ? 0 : 1
   folder_id   = local.folder_id
   name        = "yc-logging-group-${random_string.unique_id.result}"
 }

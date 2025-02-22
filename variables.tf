@@ -8,6 +8,23 @@ variable "create_trigger" {
   default     = false
 }
 
+variable "create_logging_group" {
+  description = <<EOF
+    Controls whether logging group should be created.
+    If `true` parameters `existing_log_group_id` must be set.
+  EOF
+  type        = bool
+  default     = false
+}
+
+variable "create_service_account" {
+  description = <<EOF
+    Controls whether service accounts should be created.
+    If `true` parameters `existing_service_account_id` must be set.
+  EOF
+  type        = bool
+  default     = false
+}
 
 resource "random_string" "unique_id" {
   length  = 8
@@ -52,15 +69,6 @@ variable "existing_service_account_id" {
   description = "Existing IAM service account id."
   type        = string
   default     = null # "ajebc0l7qlklv3em6ln9"
-}
-
-variable "use_existing_service_account" {
-  description = <<EOF
-    Use existing service accounts (true) or not (false).
-    If `true` parameters `existing_service_account_id` must be set.
-  EOF
-  type        = bool
-  default     = false
 }
 
 variable "folder_id" {
@@ -187,14 +195,7 @@ variable "message_queue" {
   }
 }
 
-variable "use_existing_log_group" {
-  description = <<EOF
-    Use existing logging group (true) or not (false).
-    If `true` parameters `existing_log_group_id` must be set.
-  EOF
-  type        = bool
-  default     = false
-}
+
 
 variable "existing_log_group_id" {
   description = "Existing logging group id."
