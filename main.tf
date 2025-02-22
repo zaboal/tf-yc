@@ -15,7 +15,9 @@ locals {
   }
 }
 
-# ------------------------------- New Log Group --------------------------------
+# ##############################################################################
+#                                 New Log Group                                 
+# ##############################################################################
 
 resource "yandex_logging_group" "default_log_group" {
   description = "Cloud logging group for cloud function yc-function-example."
@@ -24,7 +26,9 @@ resource "yandex_logging_group" "default_log_group" {
   name        = "yc-logging-group-${random_string.unique_id.result}"
 }
 
-# --------------------- New Service Account for Terraform ----------------------
+# ##############################################################################
+#                       New Service Account for Terraform                       
+# ##############################################################################
 
 resource "yandex_iam_service_account" "default_cloud_function_sa" {
   description = "IAM service account for cloud function yc-function-example."
@@ -69,7 +73,9 @@ resource "time_sleep" "wait_for_iam" {
   ]
 }
 
-# ---------------------------------- Lockbox -----------------------------------
+# ##############################################################################
+#                                    Lockbox                                    
+# ##############################################################################
 
 resource "yandex_lockbox_secret" "yc_secret" {
   description = "Lockbox secret for cloud function yc-function-example from tf-module terraform-yc-function."
@@ -85,7 +91,9 @@ resource "yandex_lockbox_secret_version" "yc_version" {
   }
 }
 
-# --------------------------------- Function -----------------------------------
+# ##############################################################################
+#                                   Function                                    
+# ##############################################################################
 
 resource "yandex_function_iam_binding" "function_iam" {
   count       = var.public_access ? 1 : 0
