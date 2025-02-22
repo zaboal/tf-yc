@@ -6,31 +6,34 @@ locals {
   folder_id               = var.folder_id == null ? data.yandex_client_config.client.folder_id : var.folder_id
 
   # If it's true that an existing resource should be used and its ID is provided, don't create a new resource.
-  create_log_group        = var.use_existing_log_group && var.existing_log_group_id != null ? true : false
-  create_service_account  = var.use_existing_service_account && var.existing_service_account_id != null ? true : false
-
-  # Default service accout name for Terraform.
-  iam_defaults            = {
-    service_account_name  = "terraform-function-${random_string.unique_id.result}"
-  }
+  create_logging_group    = var.create_logging_group && var.existing_log_group_id != null ? true : false
+  create_service_account  = var.create_service_account && var.existing_service_account_id != null ? true : false
 }
 
-# ------------------------------- New Log Group --------------------------------
+resource "random_pet" "this" {
+  length  = 2
+}
+
+# ##############################################################################
+#                                 New Log Group                                 
+# ##############################################################################
 
 resource "yandex_logging_group" "default_log_group" {
   description = "Cloud logging group for cloud function yc-function-example."
-  count       = local.create_log_group ? 0 : 1
+  count       = local.create_logging_group ? 0 : 1
   folder_id   = local.folder_id
-  name        = "yc-logging-group-${random_string.unique_id.result}"
+  name        = "yc-logging-group-${random_pet.this.id}"
 }
 
-# --------------------- New Service Account for Terraform ----------------------
+# ##############################################################################
+#                       New Service Account for Terraform                       
+# ##############################################################################
 
 resource "yandex_iam_service_account" "default_cloud_function_sa" {
   description = "IAM service account for cloud function yc-function-example."
   count       = local.create_service_account ? 0 : 1
   folder_id   = local.folder_id
-  name        = try("${var.existing_service_account_name}-${random_string.unique_id.result}", local.iam_defaults.service_account_name)
+  name        = try("${var.existing_service_account_name}-${random_pet.this.id}", "terraform-function-${random_pet.this.id}")
 }
 
 resource "yandex_resourcemanager_folder_iam_binding" "invoker" {
@@ -69,11 +72,13 @@ resource "time_sleep" "wait_for_iam" {
   ]
 }
 
-# ---------------------------------- Lockbox -----------------------------------
+# ##############################################################################
+#                                    Lockbox                                    
+# ##############################################################################
 
 resource "yandex_lockbox_secret" "yc_secret" {
   description = "Lockbox secret for cloud function yc-function-example from tf-module terraform-yc-function."
-  name        = "yc-lockbox-secret-${random_string.unique_id.result}"
+  name        = "yc-lockbox-secret-${random_pet.this.id}"
 }
 
 resource "yandex_lockbox_secret_version" "yc_version" {
@@ -85,7 +90,9 @@ resource "yandex_lockbox_secret_version" "yc_version" {
   }
 }
 
-# --------------------------------- Function -----------------------------------
+# ##############################################################################
+#                                   Function                                    
+# ##############################################################################
 
 resource "yandex_function_iam_binding" "function_iam" {
   count       = var.public_access ? 1 : 0
@@ -97,7 +104,7 @@ resource "yandex_function_iam_binding" "function_iam" {
 }
 
 resource "yandex_function" "yc_function" {
-  name               = coalesce(var.yc_function_name, "yc-function-example-${random_string.unique_id.result}")
+  name               = coalesce(var.yc_function_name, "yc-function-example-${random_pet.this.id}")
   description        = coalesce(var.yc_function_description, "Cloud function from tf-module terraform-yc-function with scaling policy and specific trigger type yc-function-trigger.")
   user_hash          = var.user_hash
   runtime            = var.runtime
@@ -163,7 +170,7 @@ resource "yandex_function" "yc_function" {
 
 resource "yandex_function_trigger" "yc_trigger" {
   count       = var.create_trigger ? 1 : 0
-  name        = "yc-function-trigger-${random_string.unique_id.result}"
+  name        = "yc-function-trigger-${random_pet.this.id}"
   description = "Specific cloud function trigger type yc-function-trigger for cloud function yc-function-example."
 
   dynamic "logging" {
