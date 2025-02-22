@@ -43,7 +43,7 @@ variable "existing_service_account_id" {
   default     = null # "ajebc0l7qlklv3em6ln9"
 }
 
-variable "use_existing_sa" {
+variable "use_existing_service_account" {
   description = <<EOF
     Use existing service accounts (true) or not (false).
     If `true` parameters `existing_service_account_id` must be set.
