@@ -1,3 +1,14 @@
+variable "create_trigger" {
+  description = <<EOF
+    Controls whether Function trigger should be created.
+    If `true` parameter `choosing_trigger_type` must not be empty string.
+    If `false` trigger `yc_trigger` will not be created for Cloud Function.
+  EOF
+  type        = bool
+  default     = false
+}
+
+
 resource "random_string" "unique_id" {
   length  = 8
   upper   = false
@@ -282,14 +293,4 @@ variable "environment" {
     "name"    = "John"
     "surname" = "Wick"
   }
-}
-
-variable "create_trigger" {
-  description = <<EOF
-    Create trigger for Cloud Function (true) or not (false).
-    If `true` parameter `choosing_trigger_type` must not be empty string.
-    If `false` trigger `yc_trigger` will not be created for Cloud Function.
-  EOF
-  type        = bool
-  default     = false
 }
