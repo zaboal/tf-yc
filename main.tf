@@ -15,14 +15,7 @@ locals {
   }
 }
 
-resource "yandex_lockbox_secret_version" "yc_version" {
-  description = "Version of lockbox secret yc-lockbox-secret from tf-module terraform-yc-function."
-  secret_id   = yandex_lockbox_secret.yc_secret.id
-  entries {
-    key        = var.lockbox_secret_key
-    text_value = var.lockbox_secret_value
-  }
-}
+# ------------------------------- New Log Group --------------------------------
 
 resource "yandex_logging_group" "default_log_group" {
   description = "Cloud logging group for cloud function yc-function-example."
@@ -30,6 +23,8 @@ resource "yandex_logging_group" "default_log_group" {
   folder_id   = local.folder_id
   name        = "yc-logging-group-${random_string.unique_id.result}"
 }
+
+# --------------------- New Service Account for Terraform ----------------------
 
 resource "yandex_iam_service_account" "default_cloud_function_sa" {
   description = "IAM service account for cloud function yc-function-example."
@@ -64,6 +59,33 @@ resource "yandex_resourcemanager_folder_iam_binding" "lockbox_payload_viewer" {
     "serviceAccount:${yandex_iam_service_account.default_cloud_function_sa[0].id}",
   ]
 }
+
+resource "time_sleep" "wait_for_iam" {
+  create_duration = "5s"
+  depends_on = [
+    yandex_resourcemanager_folder_iam_binding.invoker,
+    yandex_resourcemanager_folder_iam_binding.editor,
+    yandex_resourcemanager_folder_iam_binding.lockbox_payload_viewer
+  ]
+}
+
+# ---------------------------------- Lockbox -----------------------------------
+
+resource "yandex_lockbox_secret" "yc_secret" {
+  description = "Lockbox secret for cloud function yc-function-example from tf-module terraform-yc-function."
+  name        = "yc-lockbox-secret-${random_string.unique_id.result}"
+}
+
+resource "yandex_lockbox_secret_version" "yc_version" {
+  description = "Version of lockbox secret yc-lockbox-secret from tf-module terraform-yc-function."
+  secret_id   = yandex_lockbox_secret.yc_secret.id
+  entries {
+    key        = var.lockbox_secret_key
+    text_value = var.lockbox_secret_value
+  }
+}
+
+# --------------------------------- Function -----------------------------------
 
 resource "yandex_function_iam_binding" "function_iam" {
   count       = var.public_access ? 1 : 0
