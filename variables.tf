@@ -1,13 +1,3 @@
-variable "create_trigger" {
-  description = <<EOF
-    Controls whether Function trigger should be created.
-    If `true` parameter `choosing_trigger_type` must not be empty string.
-    If `false` trigger `yc_trigger` will not be created for Cloud Function.
-  EOF
-  type        = bool
-  default     = false
-}
-
 variable "create_logging_group" {
   description = <<EOF
     Controls whether logging group should be created.
@@ -21,6 +11,16 @@ variable "create_service_account" {
   description = <<EOF
     Controls whether service accounts should be created.
     If `true` parameters `existing_service_account_id` must be set.
+  EOF
+  type        = bool
+  default     = false
+}
+
+variable "create_trigger" {
+  description = <<EOF
+    Controls whether Function trigger should be created.
+    If `true` parameter `choosing_trigger_type` must not be empty string.
+    If `false` trigger `yc_trigger` will not be created for Cloud Function.
   EOF
   type        = bool
   default     = false
