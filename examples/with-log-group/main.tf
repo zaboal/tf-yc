@@ -1,3 +1,9 @@
+data "archive_file" "handler" {
+  type        = "zip"
+  source_file = "handler.sh"
+  output_path = "handler.zip"
+}
+
 module "cloud_function" {
   source = "../../"
 
@@ -5,7 +11,7 @@ module "cloud_function" {
   lockbox_secret_key   = var.lockbox_secret_key
   lockbox_secret_value = var.lockbox_secret_value
 
-  zip_filename = "handler.zip"
+  zip_filename = data.archive_file.handler.output_path
 
   # storage_mounts = {
   #   mount_point_name = "yc-function"
