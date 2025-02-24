@@ -27,13 +27,19 @@ variable "create_trigger" {
 variable "name" {
   description = "Custom Cloud Function name from tf-module"
   type        = string
-  default     = "yc-custom-function-name"
+  default     = null
 }
 
 variable "description" {
   description = "Custom Cloud Function description from tf-module"
   type        = string
-  default     = "yc-custom-function-description"
+  default     = null
+}
+
+variable "tags" {
+  description = "List of tags for cloud function yc-function-example."
+  type        = list(string)
+  default     = null
 }
 
 variable "folder_id" {
@@ -42,23 +48,24 @@ variable "folder_id" {
   default     = null
 }
 
-variable "tags" {
-  description = "List of tags for cloud function yc-function-example."
-  type        = list(string)
-  default     = ["yc_tag"]
-}
-
 variable "runtime" {
   description = "Runtime for cloud function yc-function-example."
   type        = string
-  default     = "bash-2204"
+  default     = null
 }
 
 variable "entrypoint" {
   description = "Entrypoint for cloud function yc-function-example."
   type        = string
-  default     = "handler.sh"
+  default     = null
 }
+
+variable "environment" {
+  description = "A set of key/value environment variables for Yandex Cloud Function from tf-module"
+  type        = map(string)
+  default     = null
+}
+
 
 variable "memory" {
   description = "Memory in megabytes for cloud function yc-function-example."
@@ -70,7 +77,7 @@ variable "memory" {
       var.memory >= 128 &&
       var.memory <= 4096
     )
-    error_message = "Must be between 128 and 4096 seconds, inclusive."
+    error_message = "Memory must be from 128 to 4096 megabytes."
   }
 }
 
@@ -80,10 +87,16 @@ variable "execution_timeout" {
   default     = 10
 }
 
-variable "zip_filename" {
-  description = "Filename to zip archive for the version of cloud function's code."
+variable "source_path" {
+  description = "The absolute path to a local file or directory of the Function's source code."
   type        = string
-  default     = "../../handler.zip"
+  default     = null
+}
+
+variable "zip_filename" {
+  description = "The absolute path to the `.zip` archive of the Function's source code."
+  type        = string
+  default     = null
 }
 
 variable "scaling_policy" {
@@ -244,15 +257,6 @@ variable "logging" {
   }
 }
 
-variable "environment" {
-  description = "A set of key/value environment variables for Yandex Cloud Function from tf-module"
-  type        = map(string)
-  default = {
-    "name"    = "John"
-    "surname" = "Wick"
-  }
-}
-
 variable "environment_variable" {
   description = "Function's environment variable in which secret's value will be stored."
   type        = string
@@ -281,10 +285,4 @@ variable "ymq_failure_target" {
   description = "Target for unsuccessful async invocation."
   type        = string
   default     = null # "yrn:yc:ymq:ru-central1:b1gdddu3a9appamt3aaa:ymq-failure"
-}
-
-variable "user_hash" {
-  description = "User-defined string for current function version. User must change this string any times when function changed. Function will be updated when hash is changed."
-  default     = "yc-defined-string-for-tf-module"
-  type        = string
 }

@@ -7,22 +7,28 @@ locals {
   # If it's true that an existing resource should be used and its ID is provided, don't create a new resource.
   create_logging_group   = var.create_logging_group && var.existing_log_group_id != null ? true : false
   create_service_account = var.create_service_account && var.existing_service_account_id != null ? true : false
+
+  zip_filename = var.zip_filename == null ? archive_file.function[0].output_path : var.zip_filename
+  user_hash    = filesha256(local.zip_filename)
 }
 
 resource "yandex_function" "this" {
-  name               = var.name
-  description        = var.description
-  user_hash          = var.user_hash
-  runtime            = var.runtime
-  entrypoint         = var.entrypoint
-  memory             = var.memory
-  execution_timeout  = var.execution_timeout
+  name        = var.name
+  description = var.description
+  tags        = var.tags
+
+  runtime     = var.runtime
+  entrypoint  = var.entrypoint
+  environment = var.environment
+
+  memory            = var.memory
+  execution_timeout = var.execution_timeout
+
+  user_hash          = local.user_hash
   service_account_id = local.create_service_account ? var.existing_service_account_id : yandex_iam_service_account.default_cloud_function_sa[0].id
-  tags               = var.tags
-  environment        = var.environment
 
   content {
-    zip_filename = var.zip_filename
+    zip_filename = local.zip_filename
   }
 
   log_options {
@@ -72,6 +78,15 @@ resource "yandex_function" "this" {
     yandex_resourcemanager_folder_iam_binding.lockbox_payload_viewer,
     time_sleep.wait_for_iam
   ]
+}
+
+resource "archive_file" "function" {
+  count = var.zip_filename == null ? 1 : 0
+
+  type = "zip"
+
+  source_file = var.source_path
+  output_path = "${path.module}/.terraform/tmp"
 }
 
 resource "yandex_function_iam_binding" "function_iam" {
