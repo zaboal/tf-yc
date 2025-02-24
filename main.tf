@@ -19,8 +19,9 @@ resource "random_pet" "this" {
 # ##############################################################################
 
 resource "yandex_logging_group" "default_log_group" {
-  description = "Cloud logging group for cloud function yc-function-example."
   count       = local.create_logging_group ? 0 : 1
+
+  description = "Cloud logging group for cloud function yc-function-example."
   folder_id   = local.folder_id
   name        = "yc-logging-group-${random_pet.this.id}"
 }
@@ -30,14 +31,16 @@ resource "yandex_logging_group" "default_log_group" {
 # ##############################################################################
 
 resource "yandex_iam_service_account" "default_cloud_function_sa" {
-  description = "IAM service account for cloud function yc-function-example."
   count       = local.create_service_account ? 0 : 1
+
+  description = "IAM service account for cloud function yc-function-example."
   folder_id   = local.folder_id
   name        = try("${var.existing_service_account_name}-${random_pet.this.id}", "terraform-function-${random_pet.this.id}")
 }
 
 resource "yandex_resourcemanager_folder_iam_binding" "invoker" {
-  count     = local.create_service_account ? 0 : 1
+  depends_on = [yandex_iam_service_account.default_cloud_function_sa]
+
   folder_id = local.folder_id
   role      = "functions.functionInvoker"
   members = [
@@ -46,7 +49,8 @@ resource "yandex_resourcemanager_folder_iam_binding" "invoker" {
 }
 
 resource "yandex_resourcemanager_folder_iam_binding" "editor" {
-  count     = local.create_service_account ? 0 : 1
+  depends_on = [yandex_iam_service_account.default_cloud_function_sa]
+
   folder_id = local.folder_id
   role      = "editor"
   members = [
@@ -55,7 +59,8 @@ resource "yandex_resourcemanager_folder_iam_binding" "editor" {
 }
 
 resource "yandex_resourcemanager_folder_iam_binding" "lockbox_payload_viewer" {
-  count     = local.create_service_account ? 0 : 1
+  depends_on = [yandex_iam_service_account.default_cloud_function_sa]
+
   folder_id = local.folder_id
   role      = "lockbox.payloadViewer"
   members = [
@@ -96,6 +101,7 @@ resource "yandex_lockbox_secret_version" "yc_version" {
 
 resource "yandex_function_iam_binding" "function_iam" {
   count       = var.public_access ? 1 : 0
+
   function_id = yandex_function.yc_function.id
   role        = "functions.functionInvoker"
   members = [
@@ -170,6 +176,7 @@ resource "yandex_function" "yc_function" {
 
 resource "yandex_function_trigger" "yc_trigger" {
   count       = var.create_trigger ? 1 : 0
+
   name        = "yc-function-trigger-${random_pet.this.id}"
   description = "Specific cloud function trigger type yc-function-trigger for cloud function yc-function-example."
 
