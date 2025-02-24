@@ -26,41 +26,16 @@ variable "create_trigger" {
   default     = false
 }
 
-variable "tags" {
-  description = "List of tags for cloud function yc-function-example."
-  type        = list(string)
-  default     = ["yc_tag"]
-}
-
-variable "user_hash" {
-  description = <<EOF
-    User-defined string for current function version.
-    User must change this string any times when function changed. 
-    Function will be updated when hash is changed."
-  EOF
-  default     = "yc-defined-string-for-tf-module"
+variable "yc_function_name" {
+  description = "Custom Cloud Function name from tf-module"
   type        = string
+  default     = "yc-custom-function-name"
 }
 
-variable "scaling_policy" {
-  description = "List of scaling policies for cloud function yc-function-example."
-  type = list(object({
-    tag                  = string
-    zone_instances_limit = number
-    zone_requests_limit  = number
-  }))
-}
-
-variable "existing_service_account_name" {
-  description = "Existing IAM service account name."
+variable "yc_function_description" {
+  description = "Custom Cloud Function description from tf-module"
   type        = string
-  default     = null
-}
-
-variable "existing_service_account_id" {
-  description = "Existing IAM service account id."
-  type        = string
-  default     = null # "ajebc0l7qlklv3em6ln9"
+  default     = "yc-custom-function-description"
 }
 
 variable "folder_id" {
@@ -68,6 +43,13 @@ variable "folder_id" {
   type        = string
   default     = null
 }
+
+variable "tags" {
+  description = "List of tags for cloud function yc-function-example."
+  type        = list(string)
+  default     = ["yc_tag"]
+}
+
 variable "runtime" {
   description = "Runtime for cloud function yc-function-example."
   type        = string
@@ -106,36 +88,49 @@ variable "zip_filename" {
   default     = "../../handler.zip"
 }
 
+variable "scaling_policy" {
+  description = "List of scaling policies for cloud function yc-function-example."
+  type = list(object({
+    tag                  = string
+    zone_instances_limit = number
+    zone_requests_limit  = number
+  }))
+}
+
+variable "existing_service_account_name" {
+  description = "Existing IAM service account name."
+  type        = string
+  default     = null
+}
+
+variable "existing_service_account_id" {
+  description = "Existing IAM service account id."
+  type        = string
+  default     = null # "ajebc0l7qlklv3em6ln9"
+}
+
+variable "public_access" {
+  description = "Making cloud function public (true) or not (false)."
+  type        = bool
+  default     = false
+}
+
+variable "lockbox_secret_key" {
+  description = "Lockbox secret key for cloud function yc-function-example."
+  type        = string
+}
+
+variable "lockbox_secret_value" {
+  description = "Lockbox secret value for cloud function yc-function-example."
+  type        = string
+}
+
 variable "choosing_trigger_type" {
   description = "Choosing type for cloud function trigger."
   type        = string
   validation {
     condition     = contains(["logging", "timer", "object_storage", "message_queue", ""], var.choosing_trigger_type)
     error_message = "Trigger type should be logging, timer, object_storage, message_queue or empty string."
-  }
-}
-
-variable "network_id" {
-  description = "Cloud function's network id for VPC integration."
-  type        = string
-  default     = null # "enp9rm1debn7usfmtlnv"
-}
-
-variable "logging" {
-  description = "Trigger type of logging."
-  type = object({
-    group_id       = string
-    resource_ids   = optional(list(string))
-    resource_types = optional(list(string), ["serverless.function"])
-    levels         = optional(list(string), ["INFO"])
-    batch_cutoff   = number
-    batch_size     = number
-    stream_names   = optional(list(string))
-  })
-  default = {
-    group_id     = null
-    batch_cutoff = 1
-    batch_size   = 1
   }
 }
 
@@ -187,40 +182,10 @@ variable "message_queue" {
   }
 }
 
-
-
-variable "existing_log_group_id" {
-  description = "Existing logging group id."
+variable "network_id" {
+  description = "Cloud function's network id for VPC integration."
   type        = string
-  default     = null # "e23moaejmq8m74tssfu9"
-}
-
-variable "min_level" {
-  description = "Minimal level of logging for cloud function yc-function-example."
-  type        = string
-  default     = "ERROR"
-}
-
-variable "lockbox_secret_key" {
-  description = "Lockbox secret key for cloud function yc-function-example."
-  type        = string
-}
-
-variable "lockbox_secret_value" {
-  description = "Lockbox secret value for cloud function yc-function-example."
-  type        = string
-}
-
-variable "environment_variable" {
-  description = "Function's environment variable in which secret's value will be stored."
-  type        = string
-  default     = "ENV_VARIABLE"
-}
-
-variable "public_access" {
-  description = "Making cloud function public (true) or not (false)."
-  type        = bool
-  default     = false
+  default     = null # "enp9rm1debn7usfmtlnv"
 }
 
 variable "mount_bucket" {
@@ -241,6 +206,51 @@ variable "storage_mounts" {
     mount_point_name = "yc-function"
     bucket           = null
   }
+}
+
+variable "existing_log_group_id" {
+  description = "Existing logging group id."
+  type        = string
+  default     = null # "e23moaejmq8m74tssfu9"
+}
+
+variable "min_level" {
+  description = "Minimal level of logging for cloud function yc-function-example."
+  type        = string
+  default     = "ERROR"
+}
+
+variable "logging" {
+  description = "Trigger type of logging."
+  type = object({
+    group_id       = string
+    resource_ids   = optional(list(string))
+    resource_types = optional(list(string), ["serverless.function"])
+    levels         = optional(list(string), ["INFO"])
+    batch_cutoff   = number
+    batch_size     = number
+    stream_names   = optional(list(string))
+  })
+  default = {
+    group_id     = null
+    batch_cutoff = 1
+    batch_size   = 1
+  }
+}
+
+variable "environment" {
+  description = "A set of key/value environment variables for Yandex Cloud Function from tf-module"
+  type        = map(string)
+  default = {
+    "name"    = "John"
+    "surname" = "Wick"
+  }
+}
+
+variable "environment_variable" {
+  description = "Function's environment variable in which secret's value will be stored."
+  type        = string
+  default     = "ENV_VARIABLE"
 }
 
 variable "use_async_invocation" {
@@ -267,23 +277,12 @@ variable "ymq_failure_target" {
   default     = null # "yrn:yc:ymq:ru-central1:b1gdddu3a9appamt3aaa:ymq-failure"
 }
 
-variable "yc_function_name" {
-  description = "Custom Cloud Function name from tf-module"
+variable "user_hash" {
+  description = <<EOF
+    User-defined string for current function version.
+    User must change this string any times when function changed. 
+    Function will be updated when hash is changed."
+  EOF
+  default     = "yc-defined-string-for-tf-module"
   type        = string
-  default     = "yc-custom-function-name"
-}
-
-variable "yc_function_description" {
-  description = "Custom Cloud Function description from tf-module"
-  type        = string
-  default     = "yc-custom-function-description"
-}
-
-variable "environment" {
-  description = "A set of key/value environment variables for Yandex Cloud Function from tf-module"
-  type        = map(string)
-  default = {
-    "name"    = "John"
-    "surname" = "Wick"
-  }
 }
