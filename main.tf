@@ -9,7 +9,7 @@ locals {
   create_service_account = var.create_service_account && var.existing_service_account_id != null ? true : false
 
   zip_filename = var.zip_filename == null ? archive_file.function[0].output_path : var.zip_filename
-  user_hash    = filesha256(local.zip_filename)
+  user_hash    = archive_file.function[0].output_sha256
 }
 
 resource "yandex_function" "this" {
