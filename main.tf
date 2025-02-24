@@ -239,6 +239,7 @@ resource "time_sleep" "wait_for_iam" {
 #                                    Lockbox                                    
 # ##############################################################################
 
+/*
 resource "yandex_lockbox_secret" "yc_secret" {
   description = "Lockbox secret for cloud function yc-function-example from tf-module terraform-yc-function."
   name        = coalesce(var.name)
@@ -252,3 +253,4 @@ resource "yandex_lockbox_secret_version" "yc_version" {
     text_value = var.lockbox_secret_value
   }
 }
+*/
