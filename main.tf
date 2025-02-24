@@ -49,12 +49,14 @@ resource "yandex_function" "this" {
     network_id = var.network_id != null ? var.network_id : ""
   }
 
+  /*
   secrets {
     id                   = yandex_lockbox_secret.yc_secret.id
     version_id           = yandex_lockbox_secret_version.yc_version.id
     key                  = var.lockbox_secret_key
     environment_variable = var.environment_variable
   }
+  */
 
   dynamic "async_invocation" {
     for_each = var.use_async_invocation != true ? [] : tolist(1)
