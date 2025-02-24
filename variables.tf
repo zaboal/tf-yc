@@ -1,3 +1,7 @@
+# variable "create" or "enable" is not used
+# because this module lives after the release of 0.13
+# where `count` and was introduced for entire modules.
+
 variable "create_logging_group" {
   description = <<EOF
     Controls whether logging group should be created.
