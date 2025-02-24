@@ -1,29 +1,142 @@
+# For the sake of conditional creation.
+variable "create" {
+  description = "Controls if resources should be created"
+  type        = bool
+  default     = true
+}
+
 variable "create_logging_group" {
-  description = <<EOF
-    Controls whether logging group should be created.
-    If `true` parameters `existing_log_group_id` must be set.
-  EOF
+  description = "Controls if logging group should be created."
   type        = bool
   default     = false
+
+  validation {
+    condition = var.create_logging_group == false || var.existing_log_group_id != null
+    error_message = "When `create_logging_group` is `true`, `existing_log_group_id` must be set."
+  }
 }
 
 variable "create_service_account" {
-  description = <<EOF
-    Controls whether service accounts should be created.
-    If `true` parameters `existing_service_account_id` must be set.
-  EOF
+  description = "Controls if service accounts should be created."
+  type        = bool
+  default     = false
+  
+  validation {
+    condition = var.create_service_account == false || var.existing_service_account_id != null
+    error_message = "When `create_service_account` is `true`, `existing_service_account_id` must be set."
+  }
+}
+
+variable "create_trigger" {
+  description = "Controls if Function trigger should be created."
+  type        = bool
+  default     = false
+
+  validation {
+    condition     = var.create_trigger == false || var.choosing_trigger_type != null
+    error_message = "When `create_trigger` is `true`, `choosing_trigger_type` must be set."
+  }
+}
+
+variable "create_package" {
+  description = "Controls if package should be created."
+  type        = bool
+  default     = true
+}
+
+variable "name" {
+  description = "A unique name for your Cloud Function"
+  type        = string
+  default     = "yc-custom-function-name"
+}
+
+variable "description" {
+  description = "Description of your Cloud Function"
+  type        = string
+  default     = "yc-custom-function-description"
+}
+
+variable "local_existing_package" {
+  description = "The absolute path to an existing zip-file to use"
+  type        = string
+  default     = null
+}
+
+variable "store_on_bucket" {
+  description = "Whether to store produced artifacts on a bucket or locally."
   type        = bool
   default     = false
 }
 
-variable "create_trigger" {
-  description = <<EOF
-    Controls whether Function trigger should be created.
-    If `true` parameter `choosing_trigger_type` must not be empty string.
-    If `false` trigger `yc_trigger` will not be created for Cloud Function.
-  EOF
+variable "ignore_source_code_hash" {
+  description = "Whether to ignore changes to the function's source code hash. Set to true if you manage infrastructure and code deployments separately."
   type        = bool
   default     = false
+}
+
+variable "use_async_invocation" {
+  description = "Whether to use asynchronous invocation to message queue or not."
+  type        = bool
+  default     = false
+
+  validation {
+    condition     = var.use_async_invocation == false || (var.ymq_success_target != null && var.ymq_failure_target != null)
+    error_message = "When `use_async_invocation` is `true`, `ymq_success_target` and `ymq_failure_target` must be set."
+  }
+}
+
+variable "publish" {
+  description = "Whether to publish function's url or not."
+  type        = bool
+  default     = false
+}
+
+variable "build_in_docker" {
+  description = "Whether to build dependencies in Docker"
+  type        = bool
+  default     = false
+}
+
+variable "docker_file" {
+  description = "Path to a Dockerfile when building in Docker"
+  type        = string
+  default     = ""
+}
+
+variable "docker_build_root" {
+  description = "Root dir where to build in Docker"
+  type        = string
+  default     = ""
+}
+
+variable "docker_image" {
+  description = "Docker image to use for the build"
+  type        = string
+  default     = ""
+}
+
+variable "docker_with_ssh_agent" {
+  description = "Whether to pass SSH_AUTH_SOCK into docker environment or not"
+  type        = bool
+  default     = false
+}
+
+variable "docker_pip_cache" {
+  description = "Whether to mount a shared pip cache folder into docker environment or not"
+  type        = any
+  default     = null
+}
+
+variable "docker_additional_options" {
+  description = "Additional options to pass to the docker run command (e.g. to set environment variables, volumes, etc.)"
+  type        = list(string)
+  default     = []
+}
+
+variable "docker_entrypoint" {
+  description = "Path to the Docker entrypoint to use"
+  type        = string
+  default     = null
 }
 
 variable "tags" {
@@ -217,11 +330,7 @@ variable "environment_variable" {
   default     = "ENV_VARIABLE"
 }
 
-variable "public_access" {
-  description = "Making cloud function public (true) or not (false)."
-  type        = bool
-  default     = false
-}
+
 
 variable "mount_bucket" {
   description = "Mount bucket (true) or not (false). If `true` section `storage_mounts{}` should be defined."
@@ -243,12 +352,6 @@ variable "storage_mounts" {
   }
 }
 
-variable "use_async_invocation" {
-  description = "Use asynchronous invocation to message queue (true) or not (false). If `true`, parameters `ymq_success_target` and `ymq_failure_target` must be set."
-  type        = bool
-  default     = false
-}
-
 variable "retries_count" {
   description = "Maximum number of retries for async invocation."
   type        = number
@@ -265,18 +368,6 @@ variable "ymq_failure_target" {
   description = "Target for unsuccessful async invocation."
   type        = string
   default     = null # "yrn:yc:ymq:ru-central1:b1gdddu3a9appamt3aaa:ymq-failure"
-}
-
-variable "yc_function_name" {
-  description = "Custom Cloud Function name from tf-module"
-  type        = string
-  default     = "yc-custom-function-name"
-}
-
-variable "yc_function_description" {
-  description = "Custom Cloud Function description from tf-module"
-  type        = string
-  default     = "yc-custom-function-description"
 }
 
 variable "environment" {
