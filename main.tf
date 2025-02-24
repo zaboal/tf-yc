@@ -3,16 +3,16 @@ data "yandex_client_config" "client" {}
 
 locals {
   # If not provided, infer folder ID from token access.
-  folder_id               = var.folder_id == null ? data.yandex_client_config.client.folder_id : var.folder_id
+  folder_id = var.folder_id == null ? data.yandex_client_config.client.folder_id : var.folder_id
 
   # If it's true that an existing resource should be used and its ID is provided, don't create a new resource.
-  create_logging_group    = var.create_logging_group && var.existing_log_group_id != null ? true : false
-  create_service_account  = var.create_service_account && var.existing_service_account_id != null ? true : false
+  create_logging_group   = var.create_logging_group && var.existing_log_group_id != null ? true : false
+  create_service_account = var.create_service_account && var.existing_service_account_id != null ? true : false
 }
 
 resource "yandex_function" "this" {
-  name               = coalesce(var.yc_function_name, "yc-function-example-${random_pet.this.id}")
-  description        = coalesce(var.yc_function_description, "Cloud function from tf-module terraform-yc-function with scaling policy and specific trigger type yc-function-trigger.")
+  name               = var.yc_function_name
+  description        = var.yc_function_description
   user_hash          = var.user_hash
   runtime            = var.runtime
   entrypoint         = var.entrypoint
@@ -76,7 +76,7 @@ resource "yandex_function" "this" {
 }
 
 resource "yandex_function_iam_binding" "function_iam" {
-  count       = var.public_access ? 1 : 0
+  count = var.public_access ? 1 : 0
 
   function_id = yandex_function.this.id
   role        = "functions.functionInvoker"
@@ -86,9 +86,9 @@ resource "yandex_function_iam_binding" "function_iam" {
 }
 
 resource "yandex_function_trigger" "yc_trigger" {
-  count       = var.create_trigger ? 1 : 0
+  count = var.create_trigger ? 1 : 0
 
-  name        = "yc-function-trigger-${random_pet.this.id}"
+  name        = var.yc_function_name
   description = "Specific cloud function trigger type yc-function-trigger for cloud function yc-function-example."
 
   dynamic "logging" {
@@ -163,11 +163,11 @@ resource "yandex_function_scaling_policy" "yc_scaling_policy" {
 # ##############################################################################
 
 resource "yandex_logging_group" "default_log_group" {
-  count       = local.create_logging_group ? 0 : 1
+  count = local.create_logging_group ? 0 : 1
 
   description = "Cloud logging group for cloud function yc-function-example."
   folder_id   = local.folder_id
-  name        = "yc-logging-group-${random_pet.this.id}"
+  name        = var.yc_function_name
 }
 
 # ##############################################################################
@@ -175,11 +175,11 @@ resource "yandex_logging_group" "default_log_group" {
 # ##############################################################################
 
 resource "yandex_iam_service_account" "default_cloud_function_sa" {
-  count       = local.create_service_account ? 0 : 1
+  count = local.create_service_account ? 0 : 1
 
   description = "IAM service account for cloud function yc-function-example."
   folder_id   = local.folder_id
-  name        = try("${var.existing_service_account_name}-${random_pet.this.id}", "terraform-function-${random_pet.this.id}")
+  name        = var.yc_function_name
 }
 
 resource "yandex_resourcemanager_folder_iam_binding" "invoker" {
@@ -227,7 +227,7 @@ resource "time_sleep" "wait_for_iam" {
 
 resource "yandex_lockbox_secret" "yc_secret" {
   description = "Lockbox secret for cloud function yc-function-example from tf-module terraform-yc-function."
-  name        = "yc-lockbox-secret-${random_pet.this.id}"
+  name        = coalesce(var.yc_function_name)
 }
 
 resource "yandex_lockbox_secret_version" "yc_version" {
@@ -237,10 +237,4 @@ resource "yandex_lockbox_secret_version" "yc_version" {
     key        = var.lockbox_secret_key
     text_value = var.lockbox_secret_value
   }
-}
-
-# ##############################################################################
-
-resource "random_pet" "this" {
-  length  = 2
 }

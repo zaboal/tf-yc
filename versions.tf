@@ -6,10 +6,6 @@ terraform {
       source  = "yandex-cloud/yandex"
       version = ">= 0.138"
     }
-    random = {
-      source  = "hashicorp/random"
-      version = ">= 3.6"
-    }
     time = {
       source  = "hashicorp/time"
       version = ">= 0.12"
