@@ -161,6 +161,7 @@ resource "yandex_function_trigger" "yc_trigger" {
   ]
 }
 
+/*
 resource "yandex_function_scaling_policy" "yc_scaling_policy" {
   function_id = yandex_function.this.id
 
@@ -173,6 +174,7 @@ resource "yandex_function_scaling_policy" "yc_scaling_policy" {
     }
   }
 }
+*/
 
 # ##############################################################################
 #                                 New Log Group                                 
