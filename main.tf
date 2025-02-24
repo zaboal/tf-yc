@@ -1,4 +1,3 @@
-# Create a client with the provided IAM token.
 data "yandex_client_config" "client" {}
 
 locals {
@@ -11,8 +10,8 @@ locals {
 }
 
 resource "yandex_function" "this" {
-  name               = var.yc_function_name
-  description        = var.yc_function_description
+  name               = var.name
+  description        = var.description
   user_hash          = var.user_hash
   runtime            = var.runtime
   entrypoint         = var.entrypoint
@@ -88,7 +87,7 @@ resource "yandex_function_iam_binding" "function_iam" {
 resource "yandex_function_trigger" "yc_trigger" {
   count = var.create_trigger ? 1 : 0
 
-  name        = var.yc_function_name
+  name        = var.name
   description = "Specific cloud function trigger type yc-function-trigger for cloud function yc-function-example."
 
   dynamic "logging" {
@@ -167,7 +166,7 @@ resource "yandex_logging_group" "default_log_group" {
 
   description = "Cloud logging group for cloud function yc-function-example."
   folder_id   = local.folder_id
-  name        = var.yc_function_name
+  name        = var.name
 }
 
 # ##############################################################################
@@ -179,7 +178,7 @@ resource "yandex_iam_service_account" "default_cloud_function_sa" {
 
   description = "IAM service account for cloud function yc-function-example."
   folder_id   = local.folder_id
-  name        = var.yc_function_name
+  name        = var.name
 }
 
 resource "yandex_resourcemanager_folder_iam_binding" "invoker" {
@@ -227,7 +226,7 @@ resource "time_sleep" "wait_for_iam" {
 
 resource "yandex_lockbox_secret" "yc_secret" {
   description = "Lockbox secret for cloud function yc-function-example from tf-module terraform-yc-function."
-  name        = coalesce(var.yc_function_name)
+  name        = coalesce(var.name)
 }
 
 resource "yandex_lockbox_secret_version" "yc_version" {

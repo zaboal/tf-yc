@@ -3,40 +3,34 @@
 # where `count` was introduced for entire modules.
 
 variable "create_logging_group" {
-  description = <<EOF
-    Controls whether logging group should be created.
-    If `true` parameters `existing_log_group_id` must be set.
-  EOF
+  description = "Controls if logging group should be created."
   type        = bool
   default     = false
 }
 
 variable "create_service_account" {
-  description = <<EOF
-    Controls whether service accounts should be created.
-    If `true` parameters `existing_service_account_id` must be set.
-  EOF
+  description = "Controls if service account should be created."
   type        = bool
   default     = false
 }
 
 variable "create_trigger" {
-  description = <<EOF
-    Controls whether Function trigger should be created.
-    If `true` parameter `choosing_trigger_type` must not be empty string.
-    If `false` trigger `yc_trigger` will not be created for Cloud Function.
-  EOF
+  description = "Controls if trigger should be created."
   type        = bool
   default     = false
 }
 
-variable "yc_function_name" {
+# ##############################################################################
+# Function                                                                      
+# ##############################################################################
+
+variable "name" {
   description = "Custom Cloud Function name from tf-module"
   type        = string
   default     = "yc-custom-function-name"
 }
 
-variable "yc_function_description" {
+variable "description" {
   description = "Custom Cloud Function description from tf-module"
   type        = string
   default     = "yc-custom-function-description"
@@ -101,6 +95,16 @@ variable "scaling_policy" {
   }))
 }
 
+# ##############################################################################
+# Function-specific resources                                                   
+# ##############################################################################
+
+variable "public_access" {
+  description = "Making cloud function public (true) or not (false)."
+  type        = bool
+  default     = false
+}
+
 variable "existing_service_account_name" {
   description = "Existing IAM service account name."
   type        = string
@@ -113,12 +117,6 @@ variable "existing_service_account_id" {
   default     = null # "ajebc0l7qlklv3em6ln9"
 }
 
-variable "public_access" {
-  description = "Making cloud function public (true) or not (false)."
-  type        = bool
-  default     = false
-}
-
 variable "lockbox_secret_key" {
   description = "Lockbox secret key for cloud function yc-function-example."
   type        = string
@@ -128,6 +126,10 @@ variable "lockbox_secret_value" {
   description = "Lockbox secret value for cloud function yc-function-example."
   type        = string
 }
+
+# ##############################################################################
+# Function trigger                                                              
+# ##############################################################################
 
 variable "choosing_trigger_type" {
   description = "Choosing type for cloud function trigger."
@@ -282,11 +284,7 @@ variable "ymq_failure_target" {
 }
 
 variable "user_hash" {
-  description = <<EOF
-    User-defined string for current function version.
-    User must change this string any times when function changed. 
-    Function will be updated when hash is changed."
-  EOF
+  description = "User-defined string for current function version. User must change this string any times when function changed. Function will be updated when hash is changed."
   default     = "yc-defined-string-for-tf-module"
   type        = string
 }
